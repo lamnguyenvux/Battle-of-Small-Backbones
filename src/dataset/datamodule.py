@@ -2,7 +2,7 @@ import os
 import torch
 import torchvision
 from torchvision import transforms
-from torch.utils.data import Dataset, DataLoader, Subset
+from torch.utils.data import Dataset, DataLoader, Subset, random_split
 
 from lightning.pytorch import LightningDataModule
 from typing import Callable, Literal, Optional
@@ -211,6 +211,12 @@ class DataModule(LightningDataModule):
             self.testset = torchvision.datasets.ImageFolder(
                 root=os.path.join(self.root, 'test'), transform=transform_test)
 
+        self.valset, self.trainset = random_split(
+            dataset=self.trainset,
+            lengths=(0.2, 0.8)
+        )
+
+
     def train_dataloader(self):
         return DataLoader(
             dataset=self.trainset,
@@ -220,8 +226,18 @@ class DataModule(LightningDataModule):
             pin_memory=True,
             drop_last=True
         )
-
+    
     def val_dataloader(self):
+        return DataLoader(
+            dataset=self.valset,
+            batch_size=self.batch_size,
+            num_workers=get_cpu(),
+            shuffle=False,
+            pin_memory=True,
+            drop_last=False
+        )
+
+    def test_dataloader(self):
         return DataLoader(
             dataset=self.testset,
             batch_size=self.batch_size,

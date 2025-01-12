@@ -82,15 +82,27 @@ class LightningModel(LightningModule):
         )
 
     def validation_step(self, batch, batch_idx):
+        self.calculate_metric(batch)
+
+    def on_validation_epoch_end(self):
+        self.calculate_metric_final("val")
+
+    def test_step(self, batch, batch_idx):
+        self.calculate_metric(batch)
+    
+    def on_test_epoch_end(self):
+        self.calculate_metric_final("test")
+
+    def calculate_metric(self, batch):
         images, labels = batch
         logits = self.forward(images)
         for topk, metric_acc in self.accuracy_metric.items():
             metric_acc.update(logits, labels)
 
-    def on_validation_epoch_end(self):
+    def calculate_metric_final(self, mode: str):
         results = {}
         for topk, metric_acc in self.accuracy_metric.items():
-            results[topk] = metric_acc.compute()
+            results[mode + '_' + topk] = metric_acc.compute()
             metric_acc.reset()
 
         self.log_dict(
