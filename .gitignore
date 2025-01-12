@@ -1,0 +1,12 @@
+**/lightning_logs/*
+**/data/*
+**/*.zip
+**/*.egg-info
+**/build
+**/.lightning_studio
+**/.idea
+**/.vscode
+**/checkpoints
+**/venv
+**/.venv
+**/.env

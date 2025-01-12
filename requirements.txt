@@ -1,0 +1,7 @@
+lightning[pytorch-extra]
+torchvision
+opencv-python
+pillow
+wavemix
+wandb
+timm

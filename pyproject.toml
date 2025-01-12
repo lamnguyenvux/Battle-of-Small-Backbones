@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "Battle-of-Small-Backbones"
+version = "0.1.0"
+description = "Benchmark small backbones on various domains"
+requires-python = ">=3.10"
+dynamic = ["dependencies"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src", "src.*"]
+# exclude = ["", ]
+# package-data = { "" = ["**/*.yaml", "../config/*.yml", "../image/*"] }
+
+[project.scripts]
+bob = "src.cli:main"
