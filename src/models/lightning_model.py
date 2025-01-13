@@ -34,24 +34,39 @@ class LightningModel(LightningModule):
 
         self.criterion = nn.CrossEntropyLoss()
         self.compute_loss = ComputeLoss()
-        
-        self.accuracy_metric = {}
 
-        self.top1_acc = Accuracy(
+        self.metric_accuracy: dict[str, dict[str, Accuracy]] = {}
+        self.metric_accuracy['val'] = {}
+        self.metric_accuracy['test'] = {}
+
+        self.val_top1_acc = Accuracy(
             task="multiclass",
             num_classes=self.num_classes,
             top_k=1
         )
 
-        self.accuracy_metric['top1'] = self.top1_acc
+        self.test_top1_acc = Accuracy(
+            task="multiclass",
+            num_classes=self.num_classes,
+            top_k=1
+        )
+
+        self.metric_accuracy['val']['top1'] = self.val_top1_acc
+        self.metric_accuracy['test']['top1'] = self.test_top1_acc
 
         if self.num_classes >= 5:
-            self.top5_acc = Accuracy(
+            self.val_top5_acc = Accuracy(
                 task="multiclass",
                 num_classes=self.num_classes,
                 top_k=5
             )
-            self.accuracy_metric['top5'] = self.top5_acc
+            self.test_top5_acc = Accuracy(
+                task="multiclass",
+                num_classes=self.num_classes,
+                top_k=5
+            )
+            self.metric_accuracy['val']['top5'] = self.val_top5_acc
+            self.metric_accuracy['test']['top5'] = self.test_top5_acc
 
     def forward(self, x):
         return self.model(x)
@@ -82,26 +97,26 @@ class LightningModel(LightningModule):
         )
 
     def validation_step(self, batch, batch_idx):
-        self.calculate_metric(batch)
+        self.calculate_metric(batch, mode="val")
 
     def on_validation_epoch_end(self):
         self.calculate_metric_final("val")
 
     def test_step(self, batch, batch_idx):
-        self.calculate_metric(batch)
-    
+        self.calculate_metric(batch, mode="test")
+
     def on_test_epoch_end(self):
         self.calculate_metric_final("test")
 
-    def calculate_metric(self, batch):
+    def calculate_metric(self, batch, mode):
         images, labels = batch
         logits = self.forward(images)
-        for topk, metric_acc in self.accuracy_metric.items():
+        for topk, metric_acc in self.metric_accuracy[mode].items():
             metric_acc.update(logits, labels)
 
     def calculate_metric_final(self, mode: str):
         results = {}
-        for topk, metric_acc in self.accuracy_metric.items():
+        for topk, metric_acc in self.metric_accuracy[mode].items():
             results[mode + '_' + topk] = metric_acc.compute()
             metric_acc.reset()
 
