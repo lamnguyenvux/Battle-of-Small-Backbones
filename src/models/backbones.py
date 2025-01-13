@@ -5,7 +5,7 @@ import timm
 from wavemix.classification import WaveMix
 # from src.models.repvgg import create_RepVGG_A0
 
-map_small_model = {
+map_model = {
     'convnext-nano': 'convnext_nano.in12k_ft_in1k',  # 15.6 M
     'convnext-tiny': 'convnext_tiny.in12k_ft_in1k',  # 28.6 M
     'efficientnetv2': 'efficientnetv2_rw_s.ra2_in1k',  # 24.1 M
@@ -49,8 +49,11 @@ def get_model(model_name: str, num_classes: int = 2):
         model.fc = nn.Linear(2048, num_classes)
 
     else:
+        name = map_model.get(model_name, None)
+        if name is None:
+            name = model_name
         model = timm.create_model(
-            model_name=map_small_model[model_name],
+            model_name=name,
             num_classes=num_classes,
             pretrained=True
         )
