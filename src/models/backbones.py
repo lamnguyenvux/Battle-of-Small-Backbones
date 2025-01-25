@@ -15,6 +15,8 @@ map_model = {
     'repvgg-a0': 'repvgg_a0',  # 9.1 M
     'ghostnet': 'ghostnet_100.in1k',  # 5.2 M
     'mobilenetv4': 'mobilenetv4_hybrid_medium.e200_r256_in12k_ft_in1k',  # 11.1 M
+    'repghostnet': 'repghostnet_200.in1k', # 9.8 M
+    'ghostnetv2': 'ghostnetv2_160.in1k' # 12.4 M
 }
 
 

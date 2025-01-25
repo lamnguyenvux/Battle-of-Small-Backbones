@@ -1,10 +1,11 @@
 import torch.nn as nn
 from lightning.pytorch import LightningModule
-from torch.optim import SGD, AdamW
+from torch.optim import SGD, AdamW, Adam
 from torchmetrics.classification import Accuracy
 from typing import Literal
 
 from src.models.backbones import get_model
+from src.swats import SWATS
 from src.utils import ComputeLoss, validate_literal_types
 
 
@@ -14,16 +15,20 @@ MODEL_ZOO = Literal[
     'regnet', 'shufflenet', 'repvgg-a0', 'repvgg-a1', 'repvgg-a2'
 ]
 
+OPTIMIZER_TYPE = Literal['sgd', 'adam', 'adamw', 'swats']
 
 class LightningModel(LightningModule):
     def __init__(
-        self, model_name: MODEL_ZOO,
+        self, 
+        model_name: MODEL_ZOO,
+        optimizer_type: OPTIMIZER_TYPE,
         num_classes: int = 2,
         l_rate: float = 0.001
     ):
         super().__init__()
         validate_literal_types(model_name, MODEL_ZOO)
         self.model_name = model_name
+        self.optimizer_type = optimizer_type
         self.num_classes = num_classes
         self.l_rate = l_rate
 
@@ -126,12 +131,12 @@ class LightningModel(LightningModule):
             on_epoch=True
         )
 
-    def on_train_epoch_start(self):
-        if self.current_epoch >= 10:
-            self.trainer.accelerator.setup(self.trainer)
+    # def on_train_epoch_start(self):
+    #     if self.current_epoch >= 10:
+    #         self.trainer.accelerator.setup(self.trainer)
 
     def configure_optimizers(self):
-        if self.current_epoch < 10:
+        if self.optimizer_type == "adamw":
             optimizer = AdamW(
                 self.model.parameters(),
                 lr=self.l_rate,
@@ -140,11 +145,30 @@ class LightningModel(LightningModule):
                 weight_decay=0.01,
                 amsgrad=False
             )
-        else:
+        elif self.optimizer_type == "sgd":
             optimizer = SGD(
                 self.model.parameters(),
                 lr=self.l_rate,
                 momentum=0.9
+            )
+        elif self.optimizer_type == "adam":
+            optimizer = Adam(
+                self.model.parameters(),
+                lr=self.l_rate,
+                betas=(0.9, 0.999),
+                eps=1e-8,
+                weight_decay=0.01,
+                amsgrad=False
+            )
+        else:
+            optimizer = SWATS(
+                self.model.parameters(),
+                lr=self.l_rate,
+                betas=(0.9, 0.999),
+                eps=1e-8,
+                weight_decay=0.01,
+                amsgrad=False,
+                nesterov=False
             )
         return optimizer
 
@@ -152,7 +176,8 @@ class LightningModel(LightningModule):
 if __name__ == '__main__':
     import torch
     model_pl = LightningModel(
-        model_name="convnext-nano"
+        model_name="convnext-nano",
+        optimizer_type="sgd"
     )
     inp = torch.randn(2, 3, 224, 224)
     logits = model_pl(inp)

@@ -7,9 +7,25 @@ trainer:
   num_nodes: 1
   precision: null
   logger: null
-  callbacks: null
+  callbacks:
+  - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+    init_args:
+      dirpath: ./lightning_logs
+      filename: '{epoch}-{val_top1:.3f}'
+      monitor: val_top1
+      verbose: false
+      save_last: true
+      save_top_k: 2
+      save_weights_only: false
+      mode: max
+      auto_insert_metric_name: true
+      every_n_train_steps: null
+      train_time_interval: null
+      every_n_epochs: null
+      save_on_train_epoch_end: null
+      enable_version_counter: true
   fast_dev_run: false
-  max_epochs: 20
+  max_epochs: null
   min_epochs: null
   max_steps: -1
   min_steps: null
@@ -42,12 +58,13 @@ trainer:
   default_root_dir: null
 model:
   model_name: null
-  num_classes: 102
+  optimizer_type: null
+  num_classes: 2
   l_rate: 0.001
 data:
-  dataset_type: flowers102
+  dataset_type: null
   root: null
-  batch_size: 64
+  batch_size: 32
 optimizer: null
 lr_scheduler: null
 ckpt_path: null
