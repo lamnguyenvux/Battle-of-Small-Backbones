@@ -11,7 +11,7 @@ from src.utils import ComputeLoss, validate_literal_types
 
 MODEL_ZOO = Literal[
     'wavemix', 'convnext-nano', 'efficientnetv2',
-    'convnext-tiny', 'resnet', 'mobilenetv4', 'ghostnet', 'ghostnetv2'
+    'convnext-tiny', 'resnet', 'mobilenetv4', 'ghostnet', 'ghostnetv2',
     'regnet', 'shufflenet', 'repvgg-a0', 'repvgg-a1', 'repvgg-a2', 'repghostnet'
 ]
 
