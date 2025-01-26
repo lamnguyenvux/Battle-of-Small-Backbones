@@ -111,8 +111,8 @@ class SWATS(torch.optim.Optimizer):
                 state['step'] += 1
 
                 if group['weight_decay'] != 0:
-                    # grad.add_(group['weight_decay'], w.data)
-                    grad.add_(group['weight_decay'])
+                    grad.add_(group['weight_decay'], w.data)
+                    # grad.add_(group['weight_decay'])
 
                 # if its SGD phase, take an SGD update and continue
                 if group['phase'] == 'SGD':
