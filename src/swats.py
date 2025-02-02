@@ -25,7 +25,7 @@ class SWATS(torch.optim.Optimizer):
     """
 
     def __init__(self, params, lr=1e-3, betas=(0.9, 0.999), eps=1e-8,
-                 weight_decay=0, amsgrad=False, verbose=False,
+                 weight_decay=0.01, amsgrad=False, verbose=False,
                  nesterov=False):
         if not 0.0 <= lr:
             raise ValueError(
@@ -125,7 +125,8 @@ class SWATS(torch.optim.Optimizer):
                     w.data.add_(grad, alpha=-group['lr'])
                     continue
 
-                w.data.mul_(1 - group['lr'] * group['weight_decay'])
+                if group['weight_decay'] != 0:
+                    w.data.mul_(1 - group['lr'] * group['weight_decay'])
 
                 # decay the first and second moment running average coefficient
                 exp_avg.mul_(beta1).add_(grad, alpha=1 - beta1)
