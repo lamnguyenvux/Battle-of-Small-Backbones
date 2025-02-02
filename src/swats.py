@@ -24,17 +24,9 @@ class SWATS(torch.optim.Optimizer):
     `torch.optim.SGD`.
     """
 
-    def __init__(
-        self, 
-        params, 
-        lr: float = 1e-3, 
-        betas: tuple[float, float] = (0.9, 0.999), 
-        eps: float = 1e-8,
-        weight_decay: float = 0, 
-        amsgrad: bool = False, 
-        verbose: bool = False, 
-        nesterov: bool = False
-    ):
+    def __init__(self, params, lr=1e-3, betas=(0.9, 0.999), eps=1e-8,
+                 weight_decay=0, amsgrad=False, verbose=False,
+                 nesterov=False):
         if not 0.0 <= lr:
             raise ValueError(
                 "Invalid learning rate: {}".format(lr))
@@ -110,12 +102,14 @@ class SWATS(torch.optim.Optimizer):
 
                 state['step'] += 1
 
-                if group['weight_decay'] != 0:
-                    grad.add_(group['weight_decay'], w.data)
-                    # grad.add_(group['weight_decay'])
+                # if group['weight_decay'] != 0:
+                #     grad.add_(w.data, alpha=group['weight_decay'])
 
                 # if its SGD phase, take an SGD update and continue
                 if group['phase'] == 'SGD':
+                    if group['weight_decay'] != 0:
+                        grad.add_(w.data, alpha=group['weight_decay'])
+
                     if 'momentum_buffer' not in state:
                         buf = state['momentum_buffer'] = torch.clone(
                             grad).detach()
@@ -126,14 +120,16 @@ class SWATS(torch.optim.Optimizer):
 
                     grad.mul_(1 - beta1)
                     if group['nesterov']:
-                        grad.add_(beta1, buf)
+                        grad.add_(buf, alpha=beta1)
 
-                    w.data.add_(-group['lr'], grad)
+                    w.data.add_(grad, alpha=-group['lr'])
                     continue
 
+                w.data.mul_(1 - group['lr'] * group['weight_decay'])
+
                 # decay the first and second moment running average coefficient
-                exp_avg.mul_(beta1).add_(1 - beta1, grad)
-                exp_avg_sq.mul_(beta2).addcmul_(1 - beta2, grad, grad)
+                exp_avg.mul_(beta1).add_(grad, alpha=1 - beta1)
+                exp_avg_sq.mul_(beta2).addcmul_(grad, grad, value=1 - beta2)
                 if amsgrad:
                     # maintains the maximum of all 2nd
                     # moment running avg. till now
@@ -157,7 +153,7 @@ class SWATS(torch.optim.Optimizer):
                 if pg != 0:
                     # the non-orthognal scaling estimate
                     scaling = p_view.dot(p_view) / -pg
-                    exp_avg2.mul_(beta2).add_(1 - beta2, scaling)
+                    exp_avg2.mul_(beta2).add_(scaling, alpha=1 - beta2)
 
                     # bias corrected exponential average
                     corrected_exp_avg = exp_avg2 / bias_correction2
