@@ -15,11 +15,12 @@ MODEL_ZOO = Literal[
     'regnet', 'shufflenet', 'repvgg-a0', 'repvgg-a1', 'repvgg-a2', 'repghostnet'
 ]
 
-OPTIMIZER_TYPE = Literal['sgd', 'adam', 'adamw', 'swats']
+OPTIMIZER_TYPE = Literal['sgd', 'adam', 'adamw', 'swats', 'swatsw']
+
 
 class LightningModel(LightningModule):
     def __init__(
-        self, 
+        self,
         model_name: MODEL_ZOO,
         optimizer_type: OPTIMIZER_TYPE,
         num_classes: int = 2,
@@ -160,7 +161,7 @@ class LightningModel(LightningModule):
                 weight_decay=0.01,
                 amsgrad=False
             )
-        else:
+        elif self.optimizer_type == "swats":
             optimizer = SWATS(
                 self.model.parameters(),
                 lr=self.l_rate,
@@ -169,6 +170,17 @@ class LightningModel(LightningModule):
                 weight_decay=0.01,
                 amsgrad=False,
                 nesterov=False
+            )
+        else:
+            optimizer = SWATS(
+                self.model.parameters(),
+                lr=self.l_rate,
+                betas=(0.9, 0.999),
+                eps=1e-8,
+                weight_decay=0.01,
+                amsgrad=False,
+                nesterov=False,
+                decoupled_weight_decay=True
             )
         return optimizer
 

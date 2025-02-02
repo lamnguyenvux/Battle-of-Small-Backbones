@@ -24,9 +24,18 @@ class SWATS(torch.optim.Optimizer):
     `torch.optim.SGD`.
     """
 
-    def __init__(self, params, lr=1e-3, betas=(0.9, 0.999), eps=1e-8,
-                 weight_decay=0.01, amsgrad=False, verbose=False,
-                 nesterov=False):
+    def __init__(
+        self,
+        params,
+        lr=1e-3,
+        betas=(0.9, 0.999),
+        eps=1e-8,
+        weight_decay=0.01,
+        amsgrad=False,
+        nesterov=False,
+        decoupled_weight_decay=False,
+        verbose=False,
+    ):
         if not 0.0 <= lr:
             raise ValueError(
                 "Invalid learning rate: {}".format(lr))
@@ -39,15 +48,20 @@ class SWATS(torch.optim.Optimizer):
         if not 0.0 <= betas[1] < 1.0:
             raise ValueError(
                 "Invalid beta parameter at index 1: {}".format(betas[1]))
-        defaults = dict(lr=lr, betas=betas, eps=eps, phase='ADAM',
-                        weight_decay=weight_decay, amsgrad=amsgrad,
-                        verbose=verbose, nesterov=nesterov)
+
+        defaults = dict(
+            lr=lr, betas=betas, eps=eps, phase='ADAM',
+            weight_decay=weight_decay, amsgrad=amsgrad,
+            verbose=verbose, nesterov=nesterov,
+            decoupled_weight_decay=decoupled_weight_decay
+        )
 
         super().__init__(params, defaults)
 
     def __setstate__(self, state):
         super().__setstate__(state)
         for group in self.param_groups:
+            group.setdefault('decoupled_weight_decay', False)
             group.setdefault('amsgrad', False)
             group.setdefault('nesterov', False)
             group.setdefault('verbose', False)
@@ -126,7 +140,10 @@ class SWATS(torch.optim.Optimizer):
                     continue
 
                 if group['weight_decay'] != 0:
-                    w.data.mul_(1 - group['lr'] * group['weight_decay'])
+                    if group['decoupled_weight_decay']:
+                        w.data.mul_(1 - group['lr'] * group['weight_decay'])
+                    else:
+                        grad.add_(w.data, alpha=group['weight_decay'])
 
                 # decay the first and second moment running average coefficient
                 exp_avg.mul_(beta1).add_(grad, alpha=1 - beta1)
