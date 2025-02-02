@@ -122,7 +122,7 @@ class SWATS(torch.optim.Optimizer):
                 # if its SGD phase, take an SGD update and continue
                 if group['phase'] == 'SGD':
                     if group['weight_decay'] != 0:
-                        grad.add_(w.data, alpha=group['weight_decay'])
+                        grad.add_(group['weight_decay'], w.data)
 
                     if 'momentum_buffer' not in state:
                         buf = state['momentum_buffer'] = torch.clone(
@@ -134,20 +134,20 @@ class SWATS(torch.optim.Optimizer):
 
                     grad.mul_(1 - beta1)
                     if group['nesterov']:
-                        grad.add_(buf, alpha=beta1)
+                        grad.add_(beta1, buf)
 
-                    w.data.add_(grad, alpha=-group['lr'])
+                    w.data.add_(-group['lr'], grad)
                     continue
 
                 if group['weight_decay'] != 0:
                     if group['decoupled_weight_decay']:
                         w.data.mul_(1 - group['lr'] * group['weight_decay'])
                     else:
-                        grad.add_(w.data, alpha=group['weight_decay'])
+                        grad.add_(group['weight_decay'], w.data)
 
                 # decay the first and second moment running average coefficient
-                exp_avg.mul_(beta1).add_(grad, alpha=1 - beta1)
-                exp_avg_sq.mul_(beta2).addcmul_(grad, grad, value=1 - beta2)
+                exp_avg.mul_(beta1).add_(1 - beta1, grad)
+                exp_avg_sq.mul_(beta2).addcmul_(1 - beta2, grad, grad)
                 if amsgrad:
                     # maintains the maximum of all 2nd
                     # moment running avg. till now
@@ -171,7 +171,7 @@ class SWATS(torch.optim.Optimizer):
                 if pg != 0:
                     # the non-orthognal scaling estimate
                     scaling = p_view.dot(p_view) / -pg
-                    exp_avg2.mul_(beta2).add_(scaling, alpha=1 - beta2)
+                    exp_avg2.mul_(beta2).add_(1 - beta2, scaling)
 
                     # bias corrected exponential average
                     corrected_exp_avg = exp_avg2 / bias_correction2

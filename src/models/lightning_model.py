@@ -169,7 +169,8 @@ class LightningModel(LightningModule):
                 eps=1e-8,
                 weight_decay=0.01,
                 amsgrad=False,
-                nesterov=False
+                nesterov=False,
+                verbose=True
             )
         else:
             optimizer = SWATS(
@@ -180,7 +181,8 @@ class LightningModel(LightningModule):
                 weight_decay=0.01,
                 amsgrad=False,
                 nesterov=False,
-                decoupled_weight_decay=True
+                decoupled_weight_decay=True,
+                verbose=True
             )
         return optimizer
 
